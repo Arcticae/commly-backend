@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "build": "rimraf ./build && tsc",
+    "build": "npm i && rimraf ./build && tsc",
     "prod": "npm run build && node ./build/index.js"
   },
   "author": "",
