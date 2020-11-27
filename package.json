@@ -8,7 +8,6 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "postinstall": "tsc",
     "build": "npm i && rm -rf ./build && tsc",
     "prod": "node ./build/index.js"
   },
