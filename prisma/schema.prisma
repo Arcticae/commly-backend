@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PG_URL")
+}
+
+model Conversation {
+  id           Int        @id @default(autoincrement())
+  friendshipId Int        @map("friendship_id")
+  callState    String?    @map("call_state")
+  callParams   Json?      @map("call_params")
+  callStart    DateTime?  @map("call_start")
+  callEnd      DateTime?  @map("call_end")
+  friendship   Friendship @relation(fields: [friendshipId], references: [id])
+
+  @@map("conversations")
+}
+
+model Friendship {
+  id            Int            @id @default(autoincrement())
+  fromUserId    Int            @map("from")
+  toUserId      Int            @map("to")
+  fromUser      User           @relation("friendships_fromTousers", fields: [fromUserId], references: [id])
+  toUser        User           @relation("friendships_toTousers", fields: [toUserId], references: [id])
+  conversations Conversation[]
+
+  @@map("friendships")
+}
+
+model User {
+  username        String       @unique
+  password        String
+  id              Int          @id @default(autoincrement())
+  fromFriendships Friendship[] @relation("friendships_fromTousers")
+  toFriendships   Friendship[] @relation("friendships_toTousers")
+
+  @@map("users")
+}

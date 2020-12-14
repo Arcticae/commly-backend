@@ -1,7 +1,12 @@
 import express from 'express';
+import logger from 'morgan';
+import * as dotenv from 'dotenv';
+import apiRouter from './routes/api';
+
+dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get('/', async (req, res) => res.send('Hello World!'));
+app.use('/api', apiRouter);
 
-app.listen(port, () => console.log(`App listening on port ${port}!`));
+app.listen(port, () => logger(`App listening on port ${port}!`));
