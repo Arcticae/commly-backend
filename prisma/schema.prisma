@@ -14,6 +14,7 @@ model Conversation {
   callParams   Json?      @map("call_params")
   callStart    DateTime?  @map("call_start")
   callEnd      DateTime?  @map("call_end")
+  callCreate   DateTime   @default(now()) @map("call_create")
   friendship   Friendship @relation(fields: [friendshipId], references: [id])
 
   @@map("conversations")
