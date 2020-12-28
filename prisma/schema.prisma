@@ -27,6 +27,7 @@ model Friendship {
   toUser        User           @relation("friendships_toTousers", fields: [toUserId], references: [id])
   conversations Conversation[]
 
+  @@unique([fromUserId, toUserId], name: "unique_pairwise_ids")
   @@map("friendships")
 }
 

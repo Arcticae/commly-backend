@@ -13,6 +13,19 @@ router.post('/', async (req, res) => {
   if (!userId) {
     return res.status(400).send({ userId: 'userId is required' });
   }
+  if (req.currentUser.id === userId) {
+    return res.status(400).send({ userId: 'Cannot create friendship to self' });
+  }
+  const friendshipExists = await prisma.friendship.findFirst({
+    where: {
+      fromUserId: req.currentUser.id,
+      toUserId: userId as number,
+    },
+  });
+
+  if (friendshipExists) {
+    return res.status(400).send({ userId: 'Friendship already exists' });
+  }
 
   try {
     const friendship = await prisma.friendship.create({

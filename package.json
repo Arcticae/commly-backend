@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon",
     "build": "npm i && rm -rf ./build && tsc",
-    "prod": "node ./build/index.js"
+    "prod": "node ./build/index.js",
+    "update-schema": "prisma introspect && prisma generate"
   },
   "author": "",
   "license": "ISC",

@@ -5,6 +5,7 @@ import apiRouter from './routes/api';
 
 dotenv.config();
 const app = express();
+app.use(logger('dev'));
 const port = process.env.PORT || 3000;
 
 app.use('/api', apiRouter);

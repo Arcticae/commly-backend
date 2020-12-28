@@ -1,11 +1,11 @@
 import { User } from '@prisma/client';
-import { CustomConversation } from '../../src/modules/conversations/types';
+import { ConversationWithUsers } from '../../src/routes/api/conversations/:id';
 
 declare global {
   namespace Express {
     interface Request {
       currentUser: User,
-      conversation?: CustomConversation
+      conversation?: ConversationWithUsers
     }
   }
 }

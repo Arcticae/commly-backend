@@ -1,10 +1,10 @@
 import { ConversationWhereInput, PrismaClient } from '@prisma/client';
 import express from 'express';
 import authMiddleware from '../../../modules/auth/authMiddleware';
-import conversationOpsRouterFor from './:id';
 import { apiCollection } from '../utils';
 import { CustomConversationCreateInput } from '../../../modules/conversations/types';
 import { ConversationStateValue } from '../../../modules/conversations/values';
+import routerForId from './:id';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -32,6 +32,52 @@ router.post('/', async (req, res) => {
 
   if (targetFriendship?.fromUser.id !== req.currentUser.id) {
     return res.status(401).send({ friendshipId: 'Operation not allowed for this user' });
+  }
+
+  const currentUsersOutgoingConvo = await prisma.conversation.findFirst({
+    where: {
+      friendship: {
+        fromUserId: req.currentUser.id,
+      },
+      callState: {
+        in: ['pending', 'in-progress'],
+      },
+    },
+  });
+
+  if (currentUsersOutgoingConvo) {
+    return res.status(400).send({ error: 'User cannot open two conversations at once' });
+  }
+
+  const otherUsersOpenConvo = await prisma.conversation.findFirst({
+    where: {
+      AND: [{
+        OR: [{
+          friendship: {
+            fromUserId: targetFriendship.toUserId,
+          },
+        },
+        {
+          friendship: {
+            toUserId: targetFriendship.toUserId,
+          },
+        }],
+      },
+      { callState: 'in-progress' },
+      ],
+    },
+  });
+
+  if (otherUsersOpenConvo) {
+    const conversation = await prisma.conversation.create({
+      data: {
+        callState: 'failed',
+        callEnd: new Date(),
+        friendship: { connect: { id: friendshipId as number } },
+      },
+    });
+
+    return res.status(201).send({ error: 'Failed: Other user is in a call', conversation });
   }
 
   try {
@@ -109,11 +155,9 @@ router.get('/:type(outgoing|incoming|all)$', async (req, res) => {
   return apiCollection(res, myConversations);
 });
 
-router.use('/:id(\\d+)$', async (req, res, ...rest) => {
-  const result = await conversationOpsRouterFor(req, res, req.params.id);
-  if (result !== null) {
-    result(req, res, ...rest);
-  }
+router.use('/:id(\\d+)', (req, res, next) => {
+  const { id } = req.params;
+  return routerForId(id)(req, res, next);
 });
 
 export default router;
