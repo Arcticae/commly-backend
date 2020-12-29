@@ -64,7 +64,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"Tomasz3\",\n    \"password\": \"abcdef\"\n}"
+					"raw": "{\n    \"username\": \"Tomasz4\",\n    \"password\": \"abcdef\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:2020/api/accounts/login",
@@ -109,7 +109,7 @@
 			"response": []
 		},
 		{
-			"name": "My Friendships",
+			"name": "All Friendships",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -135,7 +135,123 @@
 			"response": []
 		},
 		{
-			"name": "Create Friendship",
+			"name": "Active friendships",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{API_TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:2020/api/friendships/active",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "2020",
+					"path": [
+						"api",
+						"friendships",
+						"active"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Outbound friendships",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{API_TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:2020/api/friendships/outbound",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "2020",
+					"path": [
+						"api",
+						"friendships",
+						"outbound"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Inbound friendships",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{API_TOKEN}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:2020/api/friendships/inbound",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "2020",
+					"path": [
+						"api",
+						"friendships",
+						"inbound"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send Friendship Request",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer {{API_TOKEN}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": 2\n}"
+				},
+				"url": {
+					"raw": "http://localhost:2020/api/friendships",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "2020",
+					"path": [
+						"api",
+						"friendships"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Accept Friendship",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -155,7 +271,7 @@
 					"raw": "{\n    \"userId\": 3\n}"
 				},
 				"url": {
-					"raw": "http://localhost:2020/api/friendships",
+					"raw": "http://localhost:2020/api/friendships/:id/accept",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -163,7 +279,15 @@
 					"port": "2020",
 					"path": [
 						"api",
-						"friendships"
+						"friendships",
+						":id",
+						"accept"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "12"
+						}
 					]
 				}
 			},
@@ -289,7 +413,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"friendshipId\": 6\n}"
+					"raw": "{\n    \"friendshipId\": 12\n}"
 				},
 				"url": {
 					"raw": "http://localhost:2020/api/conversations",
@@ -301,80 +425,6 @@
 					"path": [
 						"api",
 						"conversations"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Accept Conversation",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"type": "text",
-						"value": "Bearer {{API_TOKEN}}"
-					},
-					{
-						"key": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "http://localhost:2020/api/conversations/6/accept",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "2020",
-					"path": [
-						"api",
-						"conversations",
-						"6",
-						"accept"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Reject Conversation",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"type": "text",
-						"value": "Bearer {{API_TOKEN}}"
-					},
-					{
-						"key": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "http://localhost:2020/api/conversations/1/reject",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "2020",
-					"path": [
-						"api",
-						"conversations",
-						"1",
-						"reject"
 					]
 				}
 			},
@@ -401,7 +451,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "http://localhost:2020/api/conversations/5/end",
+					"raw": "http://localhost:2020/api/conversations/:id/end",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -410,8 +460,14 @@
 					"path": [
 						"api",
 						"conversations",
-						"5",
+						":id",
 						"end"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "10"
+						}
 					]
 				}
 			},

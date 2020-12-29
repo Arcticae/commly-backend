@@ -10,7 +10,8 @@
     "dev": "nodemon",
     "build": "npm i && rm -rf ./build && tsc",
     "prod": "node ./build/index.js",
-    "update-schema": "prisma introspect && prisma generate"
+    "update-schema": "prisma introspect && prisma generate",
+    "update-prisma-client": "prisma generate"
   },
   "author": "",
   "license": "ISC",

@@ -15,7 +15,9 @@ model Conversation {
   callStart    DateTime?  @map("call_start")
   callEnd      DateTime?  @map("call_end")
   callCreate   DateTime   @default(now()) @map("call_create")
+  initiatorId  Int        @map("initiator_id")
   friendship   Friendship @relation(fields: [friendshipId], references: [id])
+  initiator    User       @relation("conversationsTousers", fields: [initiatorId], references: [id])
 
   @@map("conversations")
 }
@@ -24,20 +26,22 @@ model Friendship {
   id            Int            @id @default(autoincrement())
   fromUserId    Int            @map("from")
   toUserId      Int            @map("to")
+  active        Boolean        @default(false)
+  inviteMessage String?        @map("invite_message")
   fromUser      User           @relation("friendships_fromTousers", fields: [fromUserId], references: [id])
   toUser        User           @relation("friendships_toTousers", fields: [toUserId], references: [id])
   conversations Conversation[]
 
-  @@unique([fromUserId, toUserId], name: "unique_pairwise_ids")
   @@map("friendships")
 }
 
 model User {
-  username        String       @unique
+  username        String         @unique
   password        String
-  id              Int          @id @default(autoincrement())
-  fromFriendships Friendship[] @relation("friendships_fromTousers")
-  toFriendships   Friendship[] @relation("friendships_toTousers")
+  id              Int            @id @default(autoincrement())
+  conversations   Conversation[] @relation("conversationsTousers")
+  fromFriendships Friendship[]   @relation("friendships_fromTousers")
+  toFriendships   Friendship[]   @relation("friendships_toTousers")
 
   @@map("users")
 }

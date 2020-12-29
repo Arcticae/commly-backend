@@ -1,15 +1,9 @@
 import {
-  PrismaClient, Conversation, User, Friendship,
+  PrismaClient,
 } from '@prisma/client';
 import express, { NextFunction, Request, Response } from 'express';
 import { FatalError } from '../../../utils/serverErrors';
-
-export type ConversationWithUsers = Conversation
-  & { friendship: Friendship & { toUser: Omit<User, 'password'>, fromUser: Omit<User, 'password'> } };
-
-const isUsersIncomingCall = (
-  conversation: ConversationWithUsers, currentUser: User,
-) => (conversation.friendship.toUser.id === currentUser.id) && conversation.callState === 'pending';
+import { ConversationStateValue } from '../../../modules/conversations/values';
 
 const routerForId = (id?: string) => {
   if (!id) {
@@ -66,7 +60,9 @@ const routerForId = (id?: string) => {
     const userParticipatingInCall = req.conversation.friendship.fromUser.id === req.currentUser.id
       || req.conversation.friendship.toUser.id === req.currentUser.id;
 
-    const callInProgress = req.conversation.callState === 'in-progress';
+    const callInProgress = req.conversation.callState === ConversationStateValue.IN_PROGRESS;
+    const callIsPending = req.conversation.callState === ConversationStateValue.PENDING;
+
     if (userParticipatingInCall && callInProgress) {
       const result = await prisma.conversation.update({
         where: {
@@ -74,55 +70,26 @@ const routerForId = (id?: string) => {
         },
         data: {
           callEnd: new Date(),
-          callState: 'failed',
+          callState: ConversationStateValue.FINISHED,
         },
       });
       return res.status(200).send(result);
     }
-    return res.status(400).send({ error: 'Cannot end this conversation' });
-  });
 
-  router.post('/accept', async (req: Request, res) => {
-    if (!req.conversation) {
-      throw new FatalError('Middleware chain was not executed properly');
-    }
-
-    if (!isUsersIncomingCall(req.conversation, req.currentUser)) {
-      // This will happen if conversation is not pending, or the wrong user is trying to accept
-      return res.status(400).send({ error: 'Cannot accept this conversation' });
-    }
-
-    const result = await prisma.conversation.update({
-      where: {
-        id: parseInt(id, 10),
-      },
-      data: {
-        callStart: new Date(),
-        callState: 'in-progress',
-      },
-    });
-    return res.status(200).send(result);
-  });
-
-  router.post('/reject', async (req: Request, res) => {
-    if (!req.conversation) {
-      throw new FatalError('Middleware chain was not executed properly');
-    }
-
-    if (isUsersIncomingCall(req.conversation, req.currentUser)) {
+    if (userParticipatingInCall && callIsPending) {
       const result = await prisma.conversation.update({
         where: {
           id: parseInt(id, 10),
         },
         data: {
-          callState: 'failed',
+          callEnd: new Date(),
+          callState: ConversationStateValue.FAILED,
         },
       });
-
       return res.status(200).send(result);
     }
-    // This will happen if conversation is not pending, or the wrong user is trying to reject
-    return res.status(400).send({ error: 'Cannot reject this conversation' });
+
+    return res.status(400).send({ error: 'Cannot end this conversation' });
   });
   return router;
 };

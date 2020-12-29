@@ -2,7 +2,6 @@ import { ConversationWhereInput, PrismaClient } from '@prisma/client';
 import express from 'express';
 import authMiddleware from '../../../modules/auth/authMiddleware';
 import { apiCollection } from '../utils';
-import { CustomConversationCreateInput } from '../../../modules/conversations/types';
 import { ConversationStateValue } from '../../../modules/conversations/values';
 import routerForId from './:id';
 
@@ -14,8 +13,12 @@ router.use(authMiddleware);
 router.post('/', async (req, res) => {
   const { friendshipId } = req.body;
 
-  const targetFriendship = await prisma.friendship.findUnique({
-    where: { id: friendshipId },
+  const targetFriendship = await prisma.friendship.findFirst({
+    where: {
+      OR: [{ fromUserId: req.currentUser.id }, { toUserId: req.currentUser.id }],
+      id: friendshipId,
+      active: true,
+    },
     include: {
       fromUser: {
         select: {
@@ -30,14 +33,14 @@ router.post('/', async (req, res) => {
     },
   });
 
-  if (targetFriendship?.fromUser.id !== req.currentUser.id) {
+  if (!targetFriendship) {
     return res.status(401).send({ friendshipId: 'Operation not allowed for this user' });
   }
 
   const currentUsersOutgoingConvo = await prisma.conversation.findFirst({
     where: {
       friendship: {
-        fromUserId: req.currentUser.id,
+        OR: [{ fromUserId: req.currentUser.id }, { toUserId: req.currentUser.id }],
       },
       callState: {
         in: ['pending', 'in-progress'],
@@ -51,29 +54,21 @@ router.post('/', async (req, res) => {
 
   const otherUsersOpenConvo = await prisma.conversation.findFirst({
     where: {
-      AND: [{
-        OR: [{
-          friendship: {
-            fromUserId: targetFriendship.toUserId,
-          },
-        },
-        {
-          friendship: {
-            toUserId: targetFriendship.toUserId,
-          },
-        }],
-      },
-      { callState: 'in-progress' },
+      OR: [
+        { friendship: { fromUserId: targetFriendship.toUserId } },
+        { friendship: { toUserId: targetFriendship.toUserId } },
       ],
+      callState: ConversationStateValue.IN_PROGRESS,
     },
   });
 
   if (otherUsersOpenConvo) {
     const conversation = await prisma.conversation.create({
       data: {
-        callState: 'failed',
+        callState: ConversationStateValue.FAILED,
         callEnd: new Date(),
         friendship: { connect: { id: friendshipId as number } },
+        initiator: { connect: { id: req.currentUser.id } },
       },
     });
 
@@ -84,8 +79,9 @@ router.post('/', async (req, res) => {
     const conversation = await prisma.conversation.create({
       data: {
         friendship: { connect: { id: friendshipId as number } },
+        initiator: { connect: { id: req.currentUser.id } },
         callState: ConversationStateValue.PENDING,
-      } as CustomConversationCreateInput,
+      },
     });
 
     return res.status(201).send(conversation);
@@ -98,18 +94,20 @@ router.get('/:type(outgoing|incoming|all)$', async (req, res) => {
   const { type } = req.params;
   let where: ConversationWhereInput | null;
 
+  const equalsCurrentUserId = { equals: req.currentUser.id };
+
   switch (type) {
     case 'outgoing':
-      where = { friendship: { fromUserId: { equals: req.currentUser.id } } };
+      where = { initiatorId: equalsCurrentUserId };
       break;
     case 'incoming':
-      where = { friendship: { toUserId: { equals: req.currentUser.id } } };
+      where = { friendship: { toUserId: equalsCurrentUserId } };
       break;
     case 'all':
       where = {
         OR: [
-          { friendship: { fromUserId: { equals: req.currentUser.id } } },
-          { friendship: { toUserId: { equals: req.currentUser.id } } },
+          { friendship: { fromUserId: equalsCurrentUserId } },
+          { friendship: { toUserId: equalsCurrentUserId } },
         ],
       };
       break;
@@ -130,25 +128,22 @@ router.get('/:type(outgoing|incoming|all)$', async (req, res) => {
       return res.status(400).send({ callState: 'Invalid filter value' });
     }
   }
+  const selectOnlyUsername = {
+    select: {
+      username: true,
+    },
+  };
 
   const myConversations = await prisma.conversation.findMany({
     where,
     include: {
       friendship: {
         select: {
-          fromUser: {
-            select: {
-              username: true,
-            },
-          },
-
-          toUser: {
-            select: {
-              username: true,
-            },
-          },
+          fromUser: selectOnlyUsername,
+          toUser: selectOnlyUsername,
         },
       },
+      initiator: selectOnlyUsername,
     },
   });
 
