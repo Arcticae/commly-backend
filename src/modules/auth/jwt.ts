@@ -12,11 +12,13 @@ export const getToken = (payload: Record<string, any>) => jwt.sign(payload, env(
   expiresIn: parseInt(env('TOKEN_EXPIRING_TIME'), 10),
 });
 
+export const verifyJWT = (token: string) => (jwt.verify(token, env('JWT_KEY')) as JWT);
+
 export const parseToken = (authorization?: string): JWT | null => {
   if (authorization) {
     const matchData = authorization.match(/^Bearer (.*)$/);
     if (matchData?.[1]) {
-      return jwt.verify(matchData[1], env('JWT_KEY')) as JWT;
+      return verifyJWT(matchData[1]);
     }
   }
   return null;
