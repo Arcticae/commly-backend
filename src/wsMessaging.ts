@@ -4,7 +4,7 @@ import { verifyJWT } from './modules/auth/jwt';
 
 const prisma = new PrismaClient();
 
-type WSSession = { socket: WebSocket, user: User, conversationId?: number };
+type WSSession = { socket: WebSocket, user: User };
 
 const connectionStore: Record<number, WSSession> = {};
 
@@ -41,42 +41,41 @@ const authorizeSocket = async (message: any, socket: WebSocket): Promise<User> =
   return user;
 };
 
-const findPeerSession = (conversationId: number, userId: number): WSSession | null => {
-  const matchingEntry = Object.entries(connectionStore)
-    .find(
-      ([otherUserId, session]) => (
-        userId !== parseInt(otherUserId, 10) && session.conversationId === conversationId
-      ),
-    );
-
-  if (!matchingEntry) {
-    return null;
-  }
-  return matchingEntry[1];
-};
-
-const handleMessage = async (message: any, socket: WebSocket, user: User) => {
-  // Look for a peer to post the message to, and see if the conversation is open
-  if (!message.conversationId) {
-    throw new Error('No conversationId provided');
-  }
+const handleMessage = async (message: any, socket: WebSocket) => {
   // Find the conversation and send the message to peer, if connected.
-  const peerSession = findPeerSession(message.conversationId, user.id);
-  if (!peerSession) {
-    sendError('Peer is not connected yet', socket);
+  if (!message.toUserId || (typeof message.toUserId !== 'number')) {
+    sendError('toUserId is missing from the request body or is in the wrong format', socket);
     return;
   }
-  peerSession.socket.send(message);
+
+  const peerSession = connectionStore[message.toUserId as number];
+  if (!peerSession) {
+    sendError('Peer not connected', socket);
+    return;
+  }
+  peerSession.socket.send(JSON.stringify(message));
 };
 
+// eslint-disable-next-line import/prefer-default-export
 export const handleWebsocketMessages = (ws: WebSocket) => {
   ws.on('message', async (message) => {
     if (typeof message === 'string') {
-      const parsedMessage = JSON.parse(message);
+      let parsedMessage;
       try {
-        const user = await authorizeSocket(parsedMessage, ws);
-        await handleMessage(parsedMessage, ws, user);
+        parsedMessage = JSON.parse(message);
       } catch (e) {
+        socketException(`JSON parsing error: ${e.message}`, ws);
+        return;
+      }
+
+      try {
+        await authorizeSocket(parsedMessage, ws);
+        await handleMessage(parsedMessage, ws);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e.message);
+        // eslint-disable-next-line no-console
+        console.error(e.stack);
         socketException(e.message, ws);
       }
     }

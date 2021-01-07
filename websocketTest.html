@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+
+
+<script language="javascript" type="text/javascript">
+
+  let wsUri = "ws://localhost:2020/";
+  let output;
+  let websocket;
+
+  const firstMessage = {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRvbWFzejMiLCJpYXQiOjE2MTAwNTA2MTcsImV4cCI6MTYxMDA4NjYxN30.3FwNuWgg1b6qSKgZItnQPIis7Q59PRDdFW1rF3FgusY",
+    "toUserId": 3,
+    "content": {
+      "something": "something"
+    }
+  };
+
+  function init() {
+    output = document.getElementById("output");
+    testWebSocket();
+  }
+
+  function testWebSocket() {
+    websocket = new WebSocket(wsUri);
+    websocket.onopen = function(evt) { onOpen(evt) };
+    websocket.onclose = function(evt) { onClose(evt) };
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+  }
+
+  function onOpen(evt) {
+    writeToScreen("CONNECTED");
+    doSend(firstMessage);
+  }
+
+  function onClose(evt) {
+    writeToScreen("DISCONNECTED");
+  }
+
+  function onMessage(evt) {
+    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
+  }
+
+  function onError(evt) {
+    writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+  }
+
+  function doSend(message) {
+    const stringified = JSON.stringify(message);
+    writeToScreen("SENT: " + stringified);
+    websocket.send(stringified);
+  }
+
+  function writeToScreen(message) {
+    var pre = document.createElement("p");
+    pre.style.wordWrap = "break-word";
+    pre.innerHTML = message;
+    output.appendChild(pre);
+  }
+
+  window.addEventListener("load", init, false);
+
+</script>
+
+<body>
+<h2>WebSocket Test</h2>
+
+<div id="output"></div>
+
+</body>
+</html>
