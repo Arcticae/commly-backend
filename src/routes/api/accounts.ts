@@ -34,7 +34,7 @@ router.post('/login', async (req, res) => {
 
   const token = getToken({ username });
 
-  return res.status(200).send({ token });
+  return res.status(200).send({ token, id: existingUser.id });
 });
 
 // POST Register

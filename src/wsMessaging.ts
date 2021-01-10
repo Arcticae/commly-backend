@@ -50,7 +50,9 @@ const handleMessage = async (message: any, socket: WebSocket) => {
 
   const peerSession = connectionStore[message.toUserId as number];
   if (!peerSession) {
-    sendError('Peer not connected', socket);
+    socket.send(JSON.stringify({
+      activeUsers: 1,
+    }));
     return;
   }
   peerSession.socket.send(JSON.stringify(message));

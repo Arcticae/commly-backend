@@ -113,7 +113,7 @@ router.post('/:id/accept/', async (req, res) => {
   });
 
   if (accepted.count) {
-    return res.status(200).end();
+    return res.status(204).end();
   }
   return res.status(404).send({ error: 'Matching friendship not found' });
 });
