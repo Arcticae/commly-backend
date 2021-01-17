@@ -101,7 +101,19 @@ router.get('/:type(outgoing|incoming|all)$', async (req, res) => {
       where = { initiatorId: equalsCurrentUserId };
       break;
     case 'incoming':
-      where = { friendship: { toUserId: equalsCurrentUserId } };
+      where = {
+        AND: [
+          {
+            OR: [
+              { friendship: { toUserId: equalsCurrentUserId } },
+              { friendship: { fromUserId: equalsCurrentUserId } },
+            ],
+          },
+          {
+            initiatorId: { not: req.currentUser.id },
+          },
+        ],
+      };
       break;
     case 'all':
       where = {
